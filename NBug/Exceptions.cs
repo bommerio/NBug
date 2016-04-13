@@ -6,13 +6,13 @@
 
 namespace NBug
 {
-	using System;
+    using System;
 
-	using NBug.Core.Reporting;
-	using NBug.Core.Reporting.MiniDump;
-	using NBug.Core.Util;
-
-	public static class Exceptions
+    using NBug.Core.Reporting;
+    using NBug.Core.Reporting.MiniDump;
+    using NBug.Core.Util;
+    using Core.Submission;
+    public static class Exceptions
 	{
 		/// <summary>
 		/// This function acts as an exception filter for any exception that is raised from within the action body (you can see
@@ -67,5 +67,9 @@ namespace NBug
 			// Below never exits application by itself (by design) so execution of the application continues normally
 			new BugReport().Report(exception, ExceptionThread.Main);
 		}
+
+        public static void Dispatch() {
+            new Dispatcher();
+        }
 	}
 }
