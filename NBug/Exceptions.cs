@@ -12,6 +12,7 @@ namespace NBug
     using NBug.Core.Reporting.MiniDump;
     using NBug.Core.Util;
     using Core.Submission;
+    using Core.UI;
     public static class Exceptions
 	{
 		/// <summary>
@@ -57,12 +58,37 @@ namespace NBug
 					});
 		}
 
-		/// <summary>
-		/// Submits a bug report for the given exception. This function useful for submitting bug reports inside a try-catch block.
-		/// Note that this function uses the NBug configuration so it will use the pre-configured UI and submission settings.
-		/// </summary>
-		/// <param name="exception">The exception to submit as the bug report.</param>
-		public static void Report(Exception exception)
+        /// <summary>
+        /// Similar to <see cref="Filter(Action)"/> but this time, exceptions are not allowed to escape the action body and they are
+        /// simply swallowed after being queued for reporting, with a small UI displayed to the user (if set so). Note that
+        /// NBug can halt the execution with <c>Environment.Exit(0);</c> if you configured it to do so with <paramref name="continueExecution"/>
+        /// parameter set to <see langword="false"/>. You can simply use <c>Handle(true, () => { MyCodeHere(); })</c>
+        /// </summary>
+        /// <param name="continueExecution">Decides whether to exit application after handling the exception or continue execution.</param>
+        /// <param name="body">Body of code to be executed.</param>
+        public static void Handle(Action body) {
+            ExecutionFlow ret = ExecutionFlow.BreakExecution;
+            ExceptionFilters.Filter(
+                body,
+                ex =>
+                {
+                    // Filtering the exception
+                    ret = new BugReport().Report(ex, ExceptionThread.Main);
+                    return true; // Yes proceed to handling the exception
+                },
+                ex =>
+                {
+                    if (ret == ExecutionFlow.BreakExecution) {
+                        Environment.Exit(0);
+                    }
+                });
+        }
+        /// <summary>
+        /// Submits a bug report for the given exception. This function useful for submitting bug reports inside a try-catch block.
+        /// Note that this function uses the NBug configuration so it will use the pre-configured UI and submission settings.
+        /// </summary>
+        /// <param name="exception">The exception to submit as the bug report.</param>
+        public static void Report(Exception exception)
 		{
 			// Below never exits application by itself (by design) so execution of the application continues normally
 			new BugReport().Report(exception, ExceptionThread.Main);
